@@ -38,7 +38,8 @@ def download_wordvecs(dirpath):
         return
     else:
         os.makedirs(dirpath)
-    url = 'http://www-nlp.stanford.edu/data/glove.840B.300d.zip'
+    # url = 'http://www-nlp.stanford.edu/data/glove.840B.300d.zip'
+    url ='https://apache-mxnet.s3.cn-north-1.amazonaws.com.cn/gluon/embeddings/glove/glove.840B.300d.zip'
     unzip(download(url, dirpath))
 
 def download_snli(dirpath):
