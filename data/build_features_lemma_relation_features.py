@@ -15,7 +15,7 @@ import tarfile
 def download(url, dirpath):
     filename = url.split('/')[-1]
     filepath = os.path.join(dirpath, filename)
-    os.system('wget {} -O {}'.format(url, filepath))
+    os.system('axel -n 10 -a {} -o {}'.format(url, filepath))
     return filepath
 
 def unzip(filepath):
