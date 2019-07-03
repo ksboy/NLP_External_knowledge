@@ -5,7 +5,7 @@ import theano
 import theano.tensor as tensor
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
-import cPickle as pkl
+import pickle as pkl
 import pdb
 import numpy
 import copy
@@ -25,21 +25,21 @@ logger = logging.getLogger(__name__)
 
 # push parameters to Theano shared variables
 def zipp(params, tparams):
-    for kk, vv in params.iteritems():
+    for kk, vv in params.items():
         tparams[kk].set_value(vv)
 
 
 # pull parameters from Theano shared variables
 def unzip(zipped):
     new_params = OrderedDict()
-    for kk, vv in zipped.iteritems():
+    for kk, vv in zipped.items():
         new_params[kk] = vv.get_value()
     return new_params
 
 
 # get the list of parameters: Note that tparams must be OrderedDict
 def itemlist(tparams):
-    return [vv for kk, vv in tparams.iteritems()]
+    return [vv for kk, vv in tparams.items()]
 
 
 # dropout
@@ -67,16 +67,16 @@ def _p(pp, name):
 # initialize Theano shared variables according to the initial parameters
 def init_tparams(params):
     tparams = OrderedDict()
-    for kk, pp in params.iteritems():
+    for kk, pp in params.items():
         tparams[kk] = theano.shared(params[kk], name=kk)
-        print kk, pp.shape
+        print(kk, pp.shape)
     return tparams
 
 
 # load parameters
 def load_params(path, params):
     pp = numpy.load(path)
-    for kk, vv in params.iteritems():
+    for kk, vv in params.items():
         if kk not in pp:
             warnings.warn('%s is not in the archive' % kk)
             continue
@@ -615,7 +615,7 @@ def pred_probs(f_log_probs, prepare_data, options, iterator, kb_dict, verbose=Fa
             pdb.set_trace()
 
         if verbose:
-            print >>sys.stderr, '%d samples computed' % (n_done)
+            print('%d samples computed' % (n_done), file=sys.stderr)
 
     return numpy.array(probs)
 
@@ -644,7 +644,7 @@ def pred_acc(f_pred, prepare_data, options, iterator, kb_dict, verbose=False):
 def adam(lr, tparams, grads, inp, cost, beta1=0.9, beta2=0.999, e=1e-8):
 
     gshared = [theano.shared(p.get_value() * 0., name='%s_grad' % k)
-               for k, p in tparams.iteritems()]
+               for k, p in tparams.items()]
     gsup = [(gs, g) for gs, g in zip(gshared, grads)]
 
     f_grad_shared = theano.function(inp, cost, updates=gsup, profile=profile)
@@ -655,7 +655,7 @@ def adam(lr, tparams, grads, inp, cost, beta1=0.9, beta2=0.999, e=1e-8):
     t = t_prev + 1.
     lr_t = lr * tensor.sqrt(1. - beta2**t) / (1. - beta1**t)
 
-    for p, g in zip(tparams.values(), gshared):
+    for p, g in zip(list(tparams.values()), gshared):
         m = theano.shared(p.get_value() * 0., p.name + '_mean')
         v = theano.shared(p.get_value() * 0., p.name + '_variance')
         m_t = beta1 * m + (1. - beta1) * g
@@ -676,13 +676,13 @@ def adam(lr, tparams, grads, inp, cost, beta1=0.9, beta2=0.999, e=1e-8):
 def adadelta(lr, tparams, grads, inp, cost, epsilon = 1e-6, rho = 0.95):
     zipped_grads = [theano.shared(p.get_value() * numpy.float32(0.),
                                   name='%s_grad' % k)
-                    for k, p in tparams.iteritems()]
+                    for k, p in tparams.items()]
     running_up2 = [theano.shared(p.get_value() * numpy.float32(0.),
                                  name='%s_rup2' % k)
-                   for k, p in tparams.iteritems()]
+                   for k, p in tparams.items()]
     running_grads2 = [theano.shared(p.get_value() * numpy.float32(0.),
                                     name='%s_rgrad2' % k)
-                      for k, p in tparams.iteritems()]
+                      for k, p in tparams.items()]
 
     zgup = [(zg, g) for zg, g in zip(zipped_grads, grads)]
     rg2up = [(rg2, rho * rg2 + (1 - rho) * (g ** 2))
@@ -707,13 +707,13 @@ def adadelta(lr, tparams, grads, inp, cost, epsilon = 1e-6, rho = 0.95):
 def rmsprop(lr, tparams, grads, inp, cost):
     zipped_grads = [theano.shared(p.get_value() * numpy.float32(0.),
                                   name='%s_grad' % k)
-                    for k, p in tparams.iteritems()]
+                    for k, p in tparams.items()]
     running_grads = [theano.shared(p.get_value() * numpy.float32(0.),
                                    name='%s_rgrad' % k)
-                     for k, p in tparams.iteritems()]
+                     for k, p in tparams.items()]
     running_grads2 = [theano.shared(p.get_value() * numpy.float32(0.),
                                     name='%s_rgrad2' % k)
-                      for k, p in tparams.iteritems()]
+                      for k, p in tparams.items()]
 
     zgup = [(zg, g) for zg, g in zip(zipped_grads, grads)]
     rgup = [(rg, 0.95 * rg + 0.05 * g) for rg, g in zip(running_grads, grads)]
@@ -725,7 +725,7 @@ def rmsprop(lr, tparams, grads, inp, cost):
 
     updir = [theano.shared(p.get_value() * numpy.float32(0.),
                            name='%s_updir' % k)
-             for k, p in tparams.iteritems()]
+             for k, p in tparams.items()]
     updir_new = [(ud, 0.9 * ud - 1e-4 * zg / tensor.sqrt(rg2 - rg ** 2 + 1e-4))
                  for ud, zg, rg, rg2 in zip(updir, zipped_grads, running_grads,
                                             running_grads2)]
@@ -740,7 +740,7 @@ def rmsprop(lr, tparams, grads, inp, cost):
 def sgd(lr, tparams, grads, inp, cost):
     gshared = [theano.shared(p.get_value() * 0.,
                              name='%s_grad' % k)
-               for k, p in tparams.iteritems()]
+               for k, p in tparams.items()]
     gsup = [(gs, g) for gs, g in zip(gshared, grads)]
 
     f_grad_shared = theano.function(inp, cost, updates=gsup,
@@ -802,19 +802,19 @@ def train(
     with open(dictionary[0], 'rb') as f:
         worddicts = pkl.load(f)
 
-    print 'Loading knowledge base ...'
+    print('Loading knowledge base ...')
     with open(kb_dicts[0], 'rb') as f:
         kb_dict = pkl.load(f)
 
     # reload options
     if reload_ and os.path.exists(saveto):
-        print 'Reload options'
+        print('Reload options')
         with open('%s.pkl' % saveto, 'rb') as f:
             model_options = pkl.load(f)
 
     logger.debug(pprint.pformat(model_options))
 
-    print 'Loading data'
+    print('Loading data')
     train = TextIterator(datasets[0], datasets[1], datasets[2], datasets[3], datasets[4],
                          dictionary[0], dictionary[1],
                          n_words=n_words,
@@ -841,11 +841,11 @@ def train(
 
     # Initialize (or reload) the parameters using 'model_options'
     # then build the Theano graph
-    print 'Building model'
+    print('Building model')
     params = init_params(model_options, worddicts)
     # reload parameters
     if reload_ and os.path.exists(saveto):
-        print 'Reload parameters'
+        print('Reload parameters')
         params = load_params(saveto, params)
 
     # numpy arrays -> theano shared variables
@@ -861,9 +861,9 @@ def train(
     inps = [x1, x1_mask, x1_kb, x2, x2_mask, x2_kb, kb_att, y]
 
     # before any regularizer
-    print 'Building f_log_probs...',
+    print('Building f_log_probs...', end=' ')
     f_log_probs = theano.function(inps, cost, profile=profile)
-    print 'Done'
+    print('Done')
 
     cost = cost.mean()
 
@@ -871,19 +871,19 @@ def train(
     if decay_c > 0.:
         decay_c = theano.shared(numpy.float32(decay_c), name='decay_c')
         weight_decay = 0.
-        for kk, vv in tparams.iteritems():
+        for kk, vv in tparams.items():
             weight_decay += (vv ** 2).sum()
         weight_decay *= decay_c
         cost += weight_decay
 
     # after all regularizers - compile the computational graph for cost
-    print 'Building f_cost...',
+    print('Building f_cost...', end=' ')
     f_cost = theano.function(inps, cost, profile=profile)
-    print 'Done'
+    print('Done')
 
-    print 'Computing gradient...',
+    print('Computing gradient...', end=' ')
     grads = tensor.grad(cost, wrt=itemlist(tparams))
-    print 'Done'
+    print('Done')
 
     # apply gradient clipping here
     if clip_c > 0.:
@@ -897,22 +897,22 @@ def train(
                                            g))
         grads = new_grads
         if verbose:
-            print 'Building function of gradient\'s norm'
+            print('Building function of gradient\'s norm')
             f_norm_g = theano.function(inps, tensor.sqrt(g2))
 
 
     # compile the optimizer, the actual computational graph is compiled here
     lr = tensor.scalar(name='lr')
-    print 'Building optimizers...',
+    print('Building optimizers...', end=' ')
     f_grad_shared, f_update = eval(optimizer)(lr, tparams, grads, inps, cost)
-    print 'Done'
+    print('Done')
 
-    print 'Optimization'
+    print('Optimization')
 
     history_errs = []
     # reload history
     if reload_ and os.path.exists(saveto):
-        print 'Reload history error'
+        print('Reload history error')
         history_errs = list(numpy.load(saveto)['history_errs'])
     best_p = None
     bad_counter = 0
@@ -930,7 +930,7 @@ def train(
     lr_change_list = []
     wait_counter = 0
     wait_N = 1
-    for eidx in xrange(max_epochs):
+    for eidx in range(max_epochs):
         n_samples = 0
         for x1, x2, x1_lemma, x2_lemma, y in train:
             n_samples += len(x1)
@@ -939,7 +939,7 @@ def train(
             x1, x1_mask, x1_kb, x2, x2_mask, x2_kb, kb_att, y = prepare_data(x1, x2, x1_lemma, x2_lemma, y, model_options, kb_dict, maxlen=maxlen)
 
             if x1 is None:
-                print 'Minibatch with zero sample under length ', maxlen
+                print('Minibatch with zero sample under length ', maxlen)
                 uidx -= 1
                 continue
 
@@ -957,7 +957,7 @@ def train(
             # check for bad numbers, usually we remove non-finite elements
             # and continue training - but not done here
             if numpy.isnan(cost) or numpy.isinf(cost):
-                print 'NaN detected'
+                print('NaN detected')
                 return None
 
             # verbose
@@ -969,14 +969,14 @@ def train(
 
             # save the best model so far
             if numpy.mod(uidx, saveFreq) == 0:
-                print 'Saving...',
+                print('Saving...', end=' ')
                 if best_p is not None:
                     params = best_p
                 else:
                     params = unzip(tparams)
                 numpy.savez(saveto, history_errs=history_errs, **params)
                 pkl.dump(model_options, open('%s.pkl' % saveto, 'wb'))
-                print 'Done'
+                print('Done')
 
             # validate model on validation set and early stop if necessary
             if numpy.mod(uidx, validFreq) == 0:
@@ -988,11 +988,11 @@ def train(
                 test_cost = pred_probs(f_log_probs, prepare_data, model_options, test, kb_dict).mean()
                 test_acc = pred_acc(f_pred, prepare_data, model_options, test, kb_dict)
 
-                print 'Valid cost', valid_cost
-                print 'Valid accuracy', valid_acc
-                print 'Test cost', test_cost
-                print 'Test accuracy', test_acc
-                print 'lrate:', lrate
+                print('Valid cost', valid_cost)
+                print('Valid accuracy', valid_acc)
+                print('Test cost', test_cost)
+                print('Test accuracy', test_acc)
+                print('lrate:', lrate)
 
                 valid_acc_record.append(valid_acc)
                 test_acc_record.append(test_acc)
@@ -1006,17 +1006,17 @@ def train(
                     wait_counter += 1
             
                 if wait_counter >= wait_N:
-                    print 'wait_counter max, need to half the lr'
+                    print('wait_counter max, need to half the lr')
                     bad_counter += 1
                     wait_counter = 0
-                    print 'bad_counter: '+str(bad_counter)
+                    print('bad_counter: '+str(bad_counter))
                     lrate=lrate*0.5
                     lr_change_list.append(eidx)
-                    print 'lrate change to: ' + str(lrate)
+                    print('lrate change to: ' + str(lrate))
                     zipp(best_p, tparams)
 
                 if bad_counter > patience:
-                        print 'Early Stop!'
+                        print('Early Stop!')
                         estop = True
                         break
 
@@ -1025,11 +1025,11 @@ def train(
 
             # finish after this many updates
             if uidx >= finish_after:
-                print 'Finishing after %d iterations!' % uidx
+                print('Finishing after %d iterations!' % uidx)
                 estop = True
                 break
 
-        print 'Seen %d samples' % n_samples
+        print('Seen %d samples' % n_samples)
 
         if estop:
             break
@@ -1039,21 +1039,21 @@ def train(
 
     use_noise.set_value(0.)
 
-    print '=' * 80
-    print 'Final Result'
-    print '=' * 80
+    print('=' * 80)
+    print('Final Result')
+    print('=' * 80)
     train_cost = pred_probs(f_log_probs, prepare_data, model_options, train_valid, kb_dict).mean()
     train_acc = pred_acc(f_pred, prepare_data, model_options, train_valid, kb_dict)
-    print 'Train cost', train_cost
-    print 'Train accuracy', train_acc
+    print('Train cost', train_cost)
+    print('Train accuracy', train_acc)
     valid_cost = pred_probs(f_log_probs, prepare_data, model_options, valid, kb_dict).mean()
     valid_acc = pred_acc(f_pred, prepare_data, model_options, valid, kb_dict)
-    print 'Valid cost', valid_cost
-    print 'Valid accuracy', valid_acc
+    print('Valid cost', valid_cost)
+    print('Valid accuracy', valid_acc)
     test_cost = pred_probs(f_log_probs, prepare_data, model_options, test, kb_dict).mean()
     test_acc = pred_acc(f_pred, prepare_data, model_options, test, kb_dict)
-    print 'Test cost', test_cost
-    print 'Test accuracy', test_acc
+    print('Test cost', test_cost)
+    print('Test accuracy', test_acc)
     params = copy.copy(best_p)
     numpy.savez(saveto, zipped_params=best_p, history_errs=history_errs, **params)
 
