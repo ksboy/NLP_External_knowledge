@@ -364,7 +364,7 @@ def init_params(options, worddicts):
                 tmp = line.split()
                 word = tmp[0]
                 vector = tmp[1:]
-                if word in worddicts and worddicts[word] < options['n_words']:
+                if word in worddicts and worddicts[word] < options['n_words'] and len(vector) == len(params['Wemb'][worddicts[word], :]):
                     params['Wemb'][worddicts[word], :] = vector
 
     # encoder: bidirectional RNN
@@ -448,7 +448,7 @@ def build_model(tparams, options):
     x2_kb = tensor.tensor4('x2_kb', dtype='float32')
     kb_att = tensor.tensor3('kb_att', dtype='float32')
 
-    xr1 = x1[::-1]
+    xr1 = x1[::-1] # 倒序
     xr1_mask = x1_mask[::-1]
     xr2 = x2[::-1]
     xr2_mask = x2_mask[::-1]

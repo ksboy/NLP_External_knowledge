@@ -1,2 +1,8 @@
 .idea/
 *.bak
+
+data/corenlp/
+data/glove/
+data/sesequence_and_features/
+data/snli
+data/wordnet/

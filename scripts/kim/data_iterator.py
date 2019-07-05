@@ -1,4 +1,4 @@
-import cPickle as pkl
+import pickle as pkl
 import gzip
 import numpy
 import random
@@ -49,7 +49,7 @@ class TextIterator:
         self.target_lemma.seek(0)
         self.label.seek(0)
 
-    def next(self):
+    def __next__(self):
         if self.end_of_data:
             self.end_of_data = False
             self.reset()
@@ -66,7 +66,7 @@ class TextIterator:
         assert len(self.source_buffer) == len(self.label_buffer), 'Buffer size mismatch!'
 
         if len(self.source_buffer) == 0:
-            for k_ in xrange(self.k):
+            for k_ in range(self.k):
                 ss = self.source.readline()
                 if ss == "":
                     break
@@ -95,7 +95,7 @@ class TextIterator:
                 tidx = tlen.argsort()
                 # shuffle mini-batch
                 tindex = []
-                small_index = range(int(math.ceil(len(tidx)*1./self.batch_size)))
+                small_index = list(range(int(math.ceil(len(tidx)*1./self.batch_size))))
                 random.shuffle(small_index)
                 for i in small_index:
                     if (i+1)*self.batch_size > len(tidx):
